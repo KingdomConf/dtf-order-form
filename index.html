@@ -232,7 +232,10 @@ function submitOrder() {
     console.error("Error:", error);
     alert("Error submitting order. Check console for details.");
 });
-        
+       document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
+});
+ 
 }
     </script>
 </body>
