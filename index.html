@@ -234,15 +234,16 @@ function submitOrder() {
             image: base64String // Send Base64 image
         };
 
-        fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+      fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
     method: "POST",
+    mode: "no-cors",  // 🔹 This prevents CORS issues
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(formData),
-    mode: "no-cors"  // ✅ Forces the request to bypass CORS restrictions
+    body: JSON.stringify(formData)
 })
-.then(() => {
-    console.log("Request sent, CORS mode enabled");
-    alert("Order submitted successfully! (Note: No response due to CORS)");
+.then(response => response.text())  // Change .json() to .text() because of "no-cors" mode
+.then(data => {
+    console.log("Success:", data);
+    alert("Order submitted successfully!"); // Optional feedback
 })
 .catch(error => {
     console.error("Error:", error);
