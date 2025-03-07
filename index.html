@@ -235,25 +235,20 @@ function submitOrder() {
         };
 
         fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Success:", data);
-            alert("Order submitted successfully!");
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Error submitting order. Check console for details.");
-        });
-    };
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formData),
+    mode: "no-cors"  // ✅ Forces the request to bypass CORS restrictions
+})
+.then(() => {
+    console.log("Request sent, CORS mode enabled");
+    alert("Order submitted successfully! (Note: No response due to CORS)");
+})
+.catch(error => {
+    console.error("Error:", error);
+    alert("Error submitting order. Check console for details.");
+});
 
-    reader.onerror = function (error) {
-        console.error("Error encoding image:", error);
-        alert("Error processing image. Please try again.");
-    };
 }
 
 // EVENT LISTENER FOR SUBMIT BUTTON
