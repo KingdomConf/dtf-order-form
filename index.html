@@ -119,35 +119,104 @@
     </div>
 
     <script>
-    let uploadedFileName = "";
-    let cart = [];
-    let base64Image = "";
+   let uploadedFileName = "";
+let cart = [];
 
-    document.getElementById("upload").addEventListener("change", function(event) {
-        let file = event.target.files[0];
+// IMAGE UPLOAD FUNCTION
+document.getElementById("upload").addEventListener("change", function(event) {
+    let file = event.target.files[0];
 
-        if (file) {
-            if (!file.name.endsWith(".png")) {
-                alert("Only PNG files are allowed.");
-                return;
-            }
-
-            uploadedFileName = file.name;
-
-            let reader = new FileReader();
-            reader.onload = function(e) {
-                base64Image = e.target.result.split(",")[1]; // Extract Base64 content
-                document.getElementById("uploadedImage").src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    function submitOrder() {
-        if (!base64Image) {
-            alert("Please upload an image before submitting.");
+    if (file) {
+        if (!file.name.endsWith(".png")) {
+            alert("Only PNG files are allowed.");
             return;
         }
+
+        uploadedFileName = file.name;
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let img = new Image();
+            img.src = e.target.result;
+
+            img.onload = function() {
+                let originalWidth = img.width;
+                let originalHeight = img.height;
+
+                let widthInches = (originalWidth / 300).toFixed(2);
+                let heightInches = (originalHeight / 300).toFixed(2);
+
+                widthInches = (parseFloat(widthInches) + 0.48).toFixed(2);
+                heightInches = (parseFloat(heightInches) + 0.48).toFixed(2);
+
+                if (widthInches > 22) widthInches = 22;
+                if (heightInches > 40) heightInches = 40;
+
+                document.getElementById("width").value = widthInches;
+                document.getElementById("height").value = heightInches;
+                updatePricing();
+            };
+
+            document.getElementById("uploadedImage").src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// PRICING FUNCTION
+function updatePricing() {
+    let width = parseFloat(document.getElementById("width").value) || 0;
+    let height = parseFloat(document.getElementById("height").value) || 0;
+    let quantity = parseInt(document.getElementById("quantity").value) || 1;
+    
+    let pricePerSqIn = 0.10;
+    let totalPrice = width * height * pricePerSqIn * quantity;
+    
+    document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
+}
+
+// CART FUNCTIONALITY
+function addToCart() {
+    let width = document.getElementById("width").value;
+    let height = document.getElementById("height").value;
+    let quantity = document.getElementById("quantity").value;
+    let totalPrice = document.getElementById("totalPrice").innerText;
+
+    let cartList = document.getElementById("cartItems");
+    let listItem = document.createElement("li");
+    listItem.innerHTML = `File: ${uploadedFileName} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: ${totalPrice} 
+        <span class="remove-button" onclick="removeItem(this)">❌</span>`;
+
+    cartList.appendChild(listItem);
+    cart.push({ file: uploadedFileName, width, height, quantity, price: totalPrice });
+
+    let cartTotal = parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0;
+    cartTotal += parseFloat(totalPrice.replace("$", ""));
+
+    document.getElementById("cartTotal").innerText = `$${cartTotal.toFixed(2)}`;
+}
+
+// REMOVE ITEM FUNCTION
+function removeItem(button) {
+    let item = button.parentNode;
+    item.remove();
+    updatePricing();
+}
+
+// SUBMIT ORDER FUNCTION
+function submitOrder() {
+    let fileInput = document.getElementById("upload");
+    let file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please upload an image before submitting.");
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function () {
+        let base64String = reader.result.split(",")[1]; // Extract Base64 content
 
         let formData = {
             firstName: document.getElementById("firstName").value.trim(),
@@ -161,8 +230,8 @@
             delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Not specified",
             cart: cart,
             estimatedTotal: document.getElementById("cartTotal").innerText,
-            fileName: uploadedFileName,
-            image: base64Image // Send Base64 image
+            fileName: file.name,
+            image: base64String // Send Base64 image
         };
 
         fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
@@ -179,9 +248,17 @@
             console.error("Error:", error);
             alert("Error submitting order. Check console for details.");
         });
-    }
+    };
 
-    document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
+    reader.onerror = function (error) {
+        console.error("Error encoding image:", error);
+        alert("Error processing image. Please try again.");
+    };
+}
+
+// EVENT LISTENER FOR SUBMIT BUTTON
+document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
+
     </script>
 </body>
 </html>
