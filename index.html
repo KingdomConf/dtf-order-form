@@ -135,120 +135,50 @@
 
             let reader = new FileReader();
             reader.onload = function(e) {
-                let img = new Image();
-                img.src = e.target.result;
-
-                img.onload = function() {
-                    let originalWidth = img.width;
-                    let originalHeight = img.height;
-
-                    let widthInches = (originalWidth / 300).toFixed(2);
-                    let heightInches = (originalHeight / 300).toFixed(2);
-
-                    widthInches = (parseFloat(widthInches) + 0.48).toFixed(2);
-                    heightInches = (parseFloat(heightInches) + 0.48).toFixed(2);
-
-                    if (widthInches > 22) widthInches = 22;
-                    if (heightInches > 40) heightInches = 40;
-
-                    document.getElementById("width").value = widthInches;
-                    document.getElementById("height").value = heightInches;
-                    updatePricing();
-                };
-
                 document.getElementById("uploadedImage").src = e.target.result;
+                document.getElementById("uploadedImage").setAttribute("data-base64", e.target.result.split(",")[1]); // Store Base64 for submission
             };
             reader.readAsDataURL(file);
         }
     });
 
-    function updatePricing() {
-        let width = parseFloat(document.getElementById("width").value) || 0;
-        let height = parseFloat(document.getElementById("height").value) || 0;
-        let quantity = parseInt(document.getElementById("quantity").value) || 1;
-        
-        let pricePerSqIn = 0.10;
-        let totalPrice = width * height * pricePerSqIn * quantity;
-        
-        document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
-    }
-
-    function addToCart() {
-        let width = document.getElementById("width").value;
-        let height = document.getElementById("height").value;
-        let quantity = document.getElementById("quantity").value;
-        let totalPrice = document.getElementById("totalPrice").innerText;
-
-        let cartList = document.getElementById("cartItems");
-        let listItem = document.createElement("li");
-        listItem.innerHTML = `File: ${uploadedFileName} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: ${totalPrice} 
-            <span class="remove-button" onclick="removeItem(this)">❌</span>`;
-
-        cartList.appendChild(listItem);
-        cart.push({ file: uploadedFileName, width, height, quantity, price: totalPrice });
-
-        let cartTotal = parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0;
-        cartTotal += parseFloat(totalPrice.replace("$", ""));
-
-        document.getElementById("cartTotal").innerText = `$${cartTotal.toFixed(2)}`;
-    }
-
-    function removeItem(button) {
-        let item = button.parentNode;
-        item.remove();
-        updatePricing();
-    }
-
     function submitOrder() {
-    let fileInput = document.getElementById("upload");
-    let file = fileInput.files[0];
+        let base64String = document.getElementById("uploadedImage").getAttribute("data-base64") || ""; // Retrieve Base64 image
 
-    let base64String = document.getElementById("uploadedImage").getAttribute("data-base64") || ""; // Retrieve Base64 from the image
+        let formData = {
+            firstName: document.getElementById("firstName").value.trim(),
+            lastName: document.getElementById("lastName").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
+            street: document.getElementById("street").value.trim(),
+            city: document.getElementById("city").value.trim(),
+            state: document.getElementById("state").value.trim(),
+            zip: document.getElementById("zip").value.trim(),
+            delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Not specified",
+            cart: cart,
+            estimatedTotal: document.getElementById("cartTotal").innerText,
+            fileName: uploadedFileName,
+            image: base64String // Send Base64 image
+        };
 
-    let formData = {
-        firstName: document.getElementById("firstName").value.trim(),
-        lastName: document.getElementById("lastName").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        street: document.getElementById("street").value.trim(),
-        city: document.getElementById("city").value.trim(),
-        state: document.getElementById("state").value.trim(),
-        zip: document.getElementById("zip").value.trim(),
-        delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Not specified",
-        cart: cart,
-        estimatedTotal: document.getElementById("cartTotal").innerText,
-        fileName: file ? file.name : "",
-        image: base64String // Retrieve Base64 image data
-    };
-
-    fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Success:", data);
-        alert("Order submitted successfully!");
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Error submitting order. Check console for details.");
-    });
-}
-
-
-    reader.onerror = function (error) {
-        console.error("Error encoding image:", error);
-        alert("Error processing image. Please try again.");
-    };
-}
-
-
-
+        fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Success:", data);
+            alert("Order submitted successfully!");
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Error submitting order. Check console for details.");
+        });
     }
 
     document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
     </script>
 </body>
 </html>
+
