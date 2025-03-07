@@ -209,11 +209,21 @@
             estimatedTotal: document.getElementById("cartTotal").innerText
         };
 
-        fetch("YOUR_GOOGLE_SCRIPT_URL_HERE", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData)
-        });
+fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formData)
+})
+.then(response => response.json())
+.then(data => {
+    console.log("Success:", data);
+    alert("Order submitted successfully!"); // Optional feedback
+})
+.catch(error => {
+    console.error("Error:", error);
+    alert("Error submitting order. Check console for details.");
+});
+
     }
 
     document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
