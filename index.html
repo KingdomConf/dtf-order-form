@@ -204,7 +204,19 @@ function removeItem(button) {
 }
 
 function submitOrder() {
-    let formData = {
+    let fileInput = document.getElementById("upload");
+    let file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please upload an image before submitting.");
+        return;
+    }
+let reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function () {
+        let base64String = reader.result.split(",")[1]; // Extract Base64 content
+
+        let formData = {
         firstName: document.getElementById("firstName").value.trim(),
         lastName: document.getElementById("lastName").value.trim(),
         email: document.getElementById("email").value.trim(),
@@ -232,9 +244,7 @@ function submitOrder() {
     console.error("Error:", error);
     alert("Error submitting order. Check console for details.");
 });
-       document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
-});
+       
  
 }
     </script>
