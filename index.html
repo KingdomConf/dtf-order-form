@@ -172,7 +172,7 @@ function updatePricing() {
     let pricePerSqIn = 0.10;
     let totalPrice = width * height * pricePerSqIn * quantity;
     
-    document.getElementById("totalPrice").innerText = $${totalPrice.toFixed(2)};
+    document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
 }
 
 // CART FUNCTIONALITY
@@ -184,8 +184,8 @@ function addToCart() {
 
     let cartList = document.getElementById("cartItems");
     let listItem = document.createElement("li");
-    listItem.innerHTML = File: ${uploadedFileName} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: ${totalPrice} 
-        <span class="remove-button" onclick="removeItem(this)">❌</span>;
+    listItem.innerHTML = `File: ${uploadedFileName} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: ${totalPrice} 
+        <span class="remove-button" onclick="removeItem(this)">❌</span>`;
 
     cartList.appendChild(listItem);
     cart.push({ file: uploadedFileName, width, height, quantity, price: totalPrice });
@@ -193,7 +193,7 @@ function addToCart() {
     let cartTotal = parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0;
     cartTotal += parseFloat(totalPrice.replace("$", ""));
 
-    document.getElementById("cartTotal").innerText = $${cartTotal.toFixed(2)};
+    document.getElementById("cartTotal").innerText = `$${cartTotal.toFixed(2)}`;
 }
 
 // REMOVE ITEM FUNCTION
@@ -235,9 +235,5 @@ function submitOrder() {
         
 }
     </script>
-    document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
-});
-
 </body>
 </html>
