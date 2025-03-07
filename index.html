@@ -217,7 +217,7 @@ function submitOrder() {
         cart: JSON.stringify(cart), // Ensure cart is properly formatted
         estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
     };
-
+    
   fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
