@@ -203,42 +203,40 @@
     let fileInput = document.getElementById("upload");
     let file = fileInput.files[0];
 
-    let reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = function () {
-        let base64String = reader.result.split(",")[1]; // Extract Base64 content
+    let base64String = document.getElementById("uploadedImage").getAttribute("data-base64") || ""; // Retrieve Base64 from the image
 
-        let formData = {
-            firstName: document.getElementById("firstName").value.trim(),
-            lastName: document.getElementById("lastName").value.trim(),
-            email: document.getElementById("email").value.trim(),
-            phone: document.getElementById("phone").value.trim(),
-            street: document.getElementById("street").value.trim(),
-            city: document.getElementById("city").value.trim(),
-            state: document.getElementById("state").value.trim(),
-            zip: document.getElementById("zip").value.trim(),
-            delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Not specified",
-            cart: cart,
-            estimatedTotal: document.getElementById("cartTotal").innerText,
-            fileName: file.name,
-            image: base64String // Send Base64 image
-        };
-
-        fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Success:", data);
-            alert("Order submitted successfully!");
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Error submitting order. Check console for details.");
-        });
+    let formData = {
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        street: document.getElementById("street").value.trim(),
+        city: document.getElementById("city").value.trim(),
+        state: document.getElementById("state").value.trim(),
+        zip: document.getElementById("zip").value.trim(),
+        delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Not specified",
+        cart: cart,
+        estimatedTotal: document.getElementById("cartTotal").innerText,
+        fileName: file ? file.name : "",
+        image: base64String // Retrieve Base64 image data
     };
+
+    fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Success:", data);
+        alert("Order submitted successfully!");
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Error submitting order. Check console for details.");
+    });
+}
+
 
     reader.onerror = function (error) {
         console.error("Error encoding image:", error);
