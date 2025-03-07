@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTF Order Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f7;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 100%;
+            width: 90%;
+            background: #dfe3eb;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .preview {
+            cursor: pointer;
+            width: 45%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-right: 20px;
+        }
+        .image-box {
+            width: 100%;
+            max-width: 450px;
+            height: 450px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .file-upload {
+            display: none;
+        }
+        .checkout-button {
+            width: 100%;
+            background-color: #0078FF;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .checkout-button:hover {
+            background-color: #0056b3;
+        }
+        .cart-section {
+            width: 100%;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .remove-button {
+            margin-left: 10px;
+            color: red;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="preview" onclick="document.getElementById('upload').click();">
+            <div class="image-box">
+                <img id="uploadedImage" src="https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png" alt="Click to Upload">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Customer Information</h3>
+            <label>First Name:</label> <input type="text" id="firstName">
+            <label>Last Name:</label> <input type="text" id="lastName">
+            <label>Email:</label> <input type="email" id="email">
+            <label>Phone Number:</label> <input type="text" id="phone">
+
+            <h3>Shipping Information</h3>
+            <label>Street:</label> <input type="text" id="street">
+            <label>City:</label> <input type="text" id="city">
+            <label>State:</label> <input type="text" id="state">
+            <label>Zip Code:</label> <input type="text" id="zip">
+            <input type="radio" id="shipping" name="delivery" value="Shipping"> Shipping
+            <input type="radio" id="pickup" name="delivery" value="Pick-Up"> Pick-Up
+        </div>
+
+        <div class="order-details">
+            <h3>Custom Size</h3>
+            <label>Width (inches):</label> <input type="text" id="width" readonly>
+            <label>Height (inches):</label> <input type="text" id="height" readonly>
+            <label>Quantity:</label> <input type="number" id="quantity" value="1" min="1" oninput="updatePricing()">
+            <h3>Total Price: <span id="totalPrice">$0.00</span></h3>
+            <input type="file" id="upload" class="file-upload" accept="image/png">
+            <button class="checkout-button" onclick="addToCart()">ADD TO ORDER</button>
+        </div>
+
+        <div class="cart-section">
+            <h3>Order</h3>
+            <ul id="cartItems"></ul>
+            <p>Estimated Total: <span id="cartTotal">$0.00</span></p>
+            <button class="checkout-button" id="submitOrderButton">Submit Order for Review</button>
+        </div>
+    </div>
+
+    <script>
+    let uploadedFileName = "";
+    let cart = [];
+
+    document.getElementById("upload").addEventListener("change", function(event) {
+        let file = event.target.files[0];
+
+        if (file) {
+            if (!file.name.endsWith(".png")) {
+                alert("Only PNG files are allowed.");
+                return;
+            }
+
+            uploadedFileName = file.name;
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let img = new Image();
+                img.src = e.target.result;
+
+                img.onload = function() {
+                    let originalWidth = img.width;
+                    let originalHeight = img.height;
+
+                    let widthInches = (originalWidth / 300).toFixed(2);
+                    let heightInches = (originalHeight / 300).toFixed(2);
+
+                    widthInches = (parseFloat(widthInches) + 0.48).toFixed(2);
+                    heightInches = (parseFloat(heightInches) + 0.48).toFixed(2);
+
+                    if (widthInches > 22) widthInches = 22;
+                    if (heightInches > 40) heightInches = 40;
+
+                    document.getElementById("width").value = widthInches;
+                    document.getElementById("height").value = heightInches;
+                    updatePricing();
+                };
+
+                document.getElementById("uploadedImage").src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function updatePricing() {
+        let width = parseFloat(document.getElementById("width").value) || 0;
+        let height = parseFloat(document.getElementById("height").value) || 0;
+        let quantity = parseInt(document.getElementById("quantity").value) || 1;
+        
+        let pricePerSqIn = 0.10;
+        let totalPrice = width * height * pricePerSqIn * quantity;
+        
+        document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
+    }
+
+    function addToCart() {
+        let width = document.getElementById("width").value;
+        let height = document.getElementById("height").value;
+        let quantity = document.getElementById("quantity").value;
+        let totalPrice = document.getElementById("totalPrice").innerText;
+
+        let cartList = document.getElementById("cartItems");
+        let listItem = document.createElement("li");
+        listItem.innerHTML = `File: ${uploadedFileName} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: ${totalPrice} 
+            <span class="remove-button" onclick="removeItem(this)">❌</span>`;
+
+        cartList.appendChild(listItem);
+        cart.push({ file: uploadedFileName, width, height, quantity, price: totalPrice });
+
+        let cartTotal = parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0;
+        cartTotal += parseFloat(totalPrice.replace("$", ""));
+
+        document.getElementById("cartTotal").innerText = `$${cartTotal.toFixed(2)}`;
+    }
+
+    function removeItem(button) {
+        let item = button.parentNode;
+        item.remove();
+        updatePricing();
+    }
+
+    function submitOrder() {
+        let formData = {
+            firstName: document.getElementById("firstName").value.trim(),
+            lastName: document.getElementById("lastName").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
+            cart: cart,
+            estimatedTotal: document.getElementById("cartTotal").innerText
+        };
+
+        fetch("YOUR_GOOGLE_SCRIPT_URL_HERE", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+        });
+    }
+
+    document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
+    </script>
+</body>
+</html>
