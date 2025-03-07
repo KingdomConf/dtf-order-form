@@ -206,10 +206,6 @@ function removeItem(button) {
 function submitOrder() {
     let fileInput = document.getElementById("upload");
     let file = fileInput.files[0];
-
-    if (!file) {
-        alert("Please upload an image before submitting.");
-        return;
     }
 let reader = new FileReader();
     reader.readAsDataURL(file);
