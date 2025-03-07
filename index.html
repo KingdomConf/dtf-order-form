@@ -218,20 +218,22 @@ function submitOrder() {
         estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
     };
     
-  fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+  fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
     method: "POST",
+    mode: "no-cors",  // 🔹 This prevents CORS issues
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(formData)
 })
-.then(response => response.json())
+.then(response => response.text())  // Change .json() to .text() because of "no-cors" mode
 .then(data => {
     console.log("Success:", data);
-    alert("Order submitted successfully!");
+    alert("Order submitted successfully!"); // Optional feedback
 })
 .catch(error => {
     console.error("Error:", error);
     alert("Error submitting order. Check console for details.");
 });
+
 
 
         
