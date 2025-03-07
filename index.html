@@ -218,7 +218,7 @@ function submitOrder() {
         estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
     };
     
- fetch("YOUR_UPDATED_GOOGLE_SCRIPT_URL_HERE", {
+ fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(formData)
