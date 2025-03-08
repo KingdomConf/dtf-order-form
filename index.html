@@ -196,7 +196,7 @@
                 total: document.getElementById("orderTotal").innerText
             };
 
- fetch("https://script.google.com/macros/s/AKfycbzQbvwuy-sSME9B819DtN4V7aJKISNlxl4-KVwSlfhbIpe5LufhCvszClZcn5EHP2ZI/exec", {
+fetch("https://script.google.com/macros/s/AKfycbzQbvwuy-sSME9B819DtN4V7aJKISNlxl4-KVwSlfhbIpe5LufhCvszClZcn5EHP2ZI/exec", {
     method: "POST",
     headers: { 
         "Content-Type": "application/json"
@@ -214,9 +214,9 @@
 })
 .catch(error => {
     console.error("Error submitting order:", error);
-    alert("Error submitting order. Check console for details.");
-});
-            
+    alert("Error submitting order. Check console for details."));
+    
+});      
     </script>
 </body>
 </html>
