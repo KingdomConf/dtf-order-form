@@ -232,50 +232,63 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("cartTotal").innerText = `$${newTotal.toFixed(2)}`;
     }
 
-    // SUBMIT ORDER
-    function submitOrder() {
-        if (uploadedFiles.length === 0) {
-            alert("Your order is empty. Please add images before submitting.");
-            return;
-        }
+   function submitOrder() {
+    let firstName = document.getElementById("firstName").value.trim();
+    let lastName = document.getElementById("lastName").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let phone = document.getElementById("phone").value.trim();
+    let street = document.getElementById("street").value.trim();
+    let city = document.getElementById("city").value.trim();
+    let state = document.getElementById("state").value.trim();
+    let zip = document.getElementById("zip").value.trim();
+    let delivery = document.querySelector('input[name="delivery"]:checked')?.value || "Shipping";
 
-        let formData = {
-            firstName: document.getElementById("firstName").value.trim(),
-            lastName: document.getElementById("lastName").value.trim(),
-            email: document.getElementById("email").value.trim(),
-            phone: document.getElementById("phone").value.trim(),
-            street: document.getElementById("street").value.trim(),
-            city: document.getElementById("city").value.trim(),
-            state: document.getElementById("state").value.trim(),
-            zip: document.getElementById("zip").value.trim(),
-            delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Shipping",
-            images: uploadedFiles, // Store images properly
-            estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
-        };
-
-        console.log("Submitting Order:", formData); // Debugging log
-
-        fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(formData)
-})
-
-        .then(response => response.json())
-        .then(data => {
-            console.log("Success:", data);
-            alert("Order submitted successfully!");
-
-            uploadedFiles = [];
-            document.getElementById("cartItems").innerHTML = "";
-            document.getElementById("cartTotal").innerText = "$0.00";
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Error submitting order. Check console for details.");
-        });
+    if (!firstName || !lastName || !email || !phone) {
+        alert("Please fill out all required fields.");
+        return;
     }
 
+    if (uploadedFiles.length === 0) {
+        alert("Your order is empty. Please add images before submitting.");
+        return;
+    }
+
+    let formData = {
+        firstName,
+        lastName,
+        email,
+        phone,
+        street,
+        city,
+        state,
+        zip,
+        delivery,
+        images: uploadedFiles, // Stores all uploaded files
+        estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
+    };
+
+    console.log("Submitting Order:", formData); // ✅ Debugging to check form values
+
+    fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Success:", data);
+        alert("Order submitted successfully!");
+
+        // Reset form after successful submission
+        uploadedFiles = [];
+        document.getElementById("cartItems").innerHTML = "";
+        document.getElementById("cartTotal").innerText = "$0.00";
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Error submitting order. Check console for details.");
+    });
+}
     // Ensure submit button works
     document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
 
