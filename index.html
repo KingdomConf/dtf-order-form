@@ -1,450 +1,208 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Print Order Form</title>
-  <style>
-    /* Basic styles for clarity */
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .order-item { margin: 5px 0; }
-    #dpiWarning { color: red; font-weight: bold; }
-    table { margin-top: 10px; }
-    th, td { padding: 5px 10px; }
-    th { background: #f0f0f0; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DTF Order Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f7;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            max-width: 100%;
+            width: 90%;
+            background: #dfe3eb;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .image-box {
+            width: 100%;
+            max-width: 450px;
+            height: 450px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .checkout-button {
+            width: 100%;
+            background-color: #0078FF;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .checkout-button:hover {
+            background-color: #0056b3;
+        }
+        .cart-section {
+            width: 100%;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .remove-button {
+            margin-left: 10px;
+            color: red;
+            cursor: pointer;
+        }
+        #dpiWarning {
+            color: red;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="form-section">
+            <h3>Customer Information</h3>
+            <label>First Name:</label> <input type="text" id="firstName">
+            <label>Last Name:</label> <input type="text" id="lastName">
+            <label>Email:</label> <input type="email" id="email">
 
-<form id="orderForm">
-  <!-- Customer Information -->
-  <div>
-    <label>First Name: <input type="text" id="firstName" required></label>
-    <label>Last Name: <input type="text" id="lastName" required></label>
-    <label>Email: <input type="email" id="email" required></label>
-  </div>
-  <br>
-  <!-- File Upload -->
-  <div>
-    <label>Upload Images: <input type="file" id="imageUpload" multiple accept="image/*"></label>
-    <p id="dpiWarning" style="display:none;">⚠️ One or more images has a DPI below 300 (lower quality print).</p>
-  </div>
-  <!-- Order Items List -->
-  <div id="imageList"></div>
-  <!-- Total Price -->
-  <p><strong>Estimated Total: $<span id="totalPrice">0.00</span></strong></p>
-  <!-- Submit Button -->
-  <button type="button" id="submitBtn">Submit Order</button>
-</form>
+            <h3>Upload Images</h3>
+            <input type="file" id="upload" class="file-upload" accept="image/png" multiple>
+            <p id="dpiWarning">⚠️ One or more images has a DPI below 300 (lower quality print).</p>
 
-<script>
-  // Front-end script: handles file upload, preview, pricing, and submission
-  const imageUpload = document.getElementById('imageUpload');
-  const imageList   = document.getElementById('imageList');
-  const totalPriceSpan = document.getElementById('totalPrice');
-  const dpiWarning  = document.getElementById('dpiWarning');
-  const submitBtn   = document.getElementById('submitBtn');
+            <div class="cart-section">
+                <h3>Order</h3>
+                <ul id="cartItems"></ul>
+                <p>Estimated Total: <span id="cartTotal">$0.00</span></p>
+                <button class="checkout-button" id="submitOrderButton">Submit Order</button>
+            </div>
+        </div>
+    </div>
 
-  let orderList = [];  // Array to keep track of order items
+    <script>
+        let uploadedFiles = [];
+        const pricePerSqInch = 0.10; // Adjust this based on your pricing rate
 
-  // Utility: update the total price display
-  function updateTotal() {
-    let total = 0;
-    orderList.forEach(item => {
-      total += (item.price * item.quantity);
-    });
-    totalPriceSpan.textContent = total.toFixed(2);
-  }
+        document.getElementById("upload").addEventListener("change", function(event) {
+            let files = event.target.files;
+            for (let file of files) {
+                if (!file.name.endsWith(".png")) {
+                    alert("Only PNG files are allowed.");
+                    return;
+                }
 
-  // Handle file uploads
-  imageUpload.addEventListener('change', function() {
-    dpiWarning.style.display = 'none'; // reset warning each new batch of uploads
-    const files = Array.from(imageUpload.files);
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      // Use FileReader to get image data URL
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        let dataURL = e.target.result;
-        const img = new Image();
-        img.onload = function() {
-          // Original pixel dimensions
-          let pixelWidth = img.width;
-          let pixelHeight = img.height;
-          // Auto-rotate if needed (rotate image so longer side is vertical)
-          let rotated = false;
-          if (pixelWidth > pixelHeight) {
-            rotated = true;
-            // Swap width and height for calculations
-            [pixelWidth, pixelHeight] = [pixelHeight, pixelWidth];
-            // Rotate the actual image using canvas so the preview and saved file are rotated
-            const canvas = document.createElement('canvas');
-            canvas.width = pixelWidth;
-            canvas.height = pixelHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.translate(canvas.width/2, canvas.height/2);
-            ctx.rotate(Math.PI/2);
-            ctx.drawImage(img, -img.width/2, -img.height/2);
-            // Get new dataURL of rotated image (preserve format)
-            dataURL = canvas.toDataURL(file.type);
-          }
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        let width = img.width / 300;
+                        let height = img.height / 300;
+                        let dpi = Math.min(img.width / width, img.height / height);
 
-          // Calculate print dimensions to fit within 22"x40"
-          const maxWidthIn = 22;
-          const maxHeightIn = 40;
-          let printWidthIn, printHeightIn;
-          if ((pixelWidth / pixelHeight) > (maxWidthIn / maxHeightIn)) {
-            // Image is relatively wider -> width will hit limit first
-            printWidthIn = maxWidthIn;
-            printHeightIn = (pixelHeight / pixelWidth) * maxWidthIn;
-            if (printHeightIn > maxHeightIn) {
-              printHeightIn = maxHeightIn;
+                        if (dpi < 300) {
+                            document.getElementById("dpiWarning").style.display = "block";
+                        }
+
+                        width += 0.24;
+                        height += 0.24;
+
+                        let totalPrice = width * height * pricePerSqInch;
+
+                        let listItem = document.createElement("li");
+                        listItem.innerHTML = `${file.name} (${width.toFixed(2)}" x ${height.toFixed(2)}" inches) 
+                            Qty: <input type="number" value="1" min="1" class="quantity" data-price="${totalPrice.toFixed(2)}">
+                            Price: <span class="price">$${totalPrice.toFixed(2)}</span>
+                            <span class="remove-button">❌</span>`;
+
+                        document.getElementById("cartItems").appendChild(listItem);
+
+                        uploadedFiles.push({ file, width, height, price: totalPrice });
+
+                        updateTotal();
+
+                        listItem.querySelector(".quantity").addEventListener("input", updateItemPrice);
+                        listItem.querySelector(".remove-button").addEventListener("click", function() {
+                            listItem.remove();
+                            uploadedFiles = uploadedFiles.filter(f => f.file !== file);
+                            updateTotal();
+                        });
+                    };
+                };
+                reader.readAsDataURL(file);
             }
-          } else {
-            // Image is relatively tall -> height will hit limit first
-            printHeightIn = maxHeightIn;
-            printWidthIn = (pixelWidth / pixelHeight) * maxHeightIn;
-            if (printWidthIn > maxWidthIn) {
-              printWidthIn = maxWidthIn;
+        });
+
+        function updateItemPrice(event) {
+            let input = event.target;
+            let priceElement = input.parentElement.querySelector(".price");
+            let basePrice = parseFloat(input.dataset.price);
+            let quantity = parseInt(input.value) || 1;
+            priceElement.textContent = `$${(basePrice * quantity).toFixed(2)}`;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll(".price").forEach(priceElement => {
+                total += parseFloat(priceElement.textContent.replace("$", ""));
+            });
+            document.getElementById("cartTotal").textContent = `$${total.toFixed(2)}`;
+        }
+
+        document.getElementById("submitOrderButton").addEventListener("click", function() {
+            let firstName = document.getElementById("firstName").value.trim();
+            let lastName = document.getElementById("lastName").value.trim();
+            let email = document.getElementById("email").value.trim();
+
+            if (!firstName || !lastName || !email) {
+                alert("Please fill in your contact details.");
+                return;
             }
-          }
-          // Round print dimensions to two decimals for display
-          printWidthIn = parseFloat(printWidthIn.toFixed(2));
-          printHeightIn = parseFloat(printHeightIn.toFixed(2));
 
-          // Calculate DPI at this print size
-          const dpiX = img.width / printWidthIn;
-          const dpiY = img.height / printHeightIn;
-          const effectiveDPI = Math.min(dpiX, dpiY);
-          let lowDPI = false;
-          if (effectiveDPI < 300) {
-            lowDPI = true;
-            dpiWarning.style.display = 'block';
-          }
+            let orderData = {
+                firstName,
+                lastName,
+                email,
+                files: uploadedFiles.map(f => ({
+                    name: f.file.name,
+                    width: f.width,
+                    height: f.height,
+                    price: f.price
+                }))
+            };
 
-          // Calculate price (area * rate), including extra 0.24" margins
-          let chargeWidth = printWidthIn + 0.24;
-          let chargeHeight = printHeightIn + 0.24;
-          if (printWidthIn >= 22) {
-            chargeWidth = 24.00;  // charge full width if at 22" limit
-          }
-          const area = chargeWidth * chargeHeight;
-          const pricePerSqIn = 0.50;  // (Example rate; replace with actual pricing rate)
-          const basePrice = area * pricePerSqIn;
-          const singlePrice = parseFloat(basePrice.toFixed(2));
+            fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Order submitted successfully!");
+                document.getElementById("cartItems").innerHTML = "";
+                document.getElementById("cartTotal").textContent = "$0.00";
+                document.getElementById("dpiWarning").style.display = "none";
+                uploadedFiles = [];
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Failed to submit order.");
+            });
+        });
+    </script>
+</body>
+</html>
 
-          // Create item object and add to order list
-          const item = {
-            fileName: file.name,
-            dataURL: dataURL,
-            widthIn: printWidthIn,
-            heightIn: printHeightIn,
-            quantity: 1,
-            price: singlePrice,   // price per single print
-            lowDPI: lowDPI
-          };
-          orderList.push(item);
-          // Add item entry to the UI list
-          addImageToList(item);
-          updateTotal();
-        };
-        img.src = dataURL;
-      };
-      reader.readAsDataURL(file);
-    });
-    // Clear the file input so the same file can be re-selected if needed
-    imageUpload.value = "";
-  });
-
-  // Create a display entry for an uploaded image in the order list UI
-  function addImageToList(item) {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'order-item';
-
-    // File name
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = item.fileName;
-    // Dimensions text
-    const dimSpan = document.createElement('span');
-    dimSpan.textContent = ` (${item.widthIn}" x ${item.heightIn}" inches)`;
-    // Quantity input
-    const qtyInput = document.createElement('input');
-    qtyInput.type = 'number';
-    qtyInput.min = '1';
-    qtyInput.value = item.quantity;
-    qtyInput.style.width = '50px';
-    // Price span
-    const priceSpan = document.createElement('span');
-    priceSpan.className = 'item-price';
-    priceSpan.textContent = " - $"+ item.price.toFixed(2);
-    // Remove button
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = "Remove";
-
-    // Append elements to the itemDiv
-    itemDiv.appendChild(nameSpan);
-    itemDiv.appendChild(dimSpan);
-    itemDiv.appendChild(document.createTextNode(" Qty: "));
-    itemDiv.appendChild(qtyInput);
-    itemDiv.appendChild(document.createTextNode(" Price: "));
-    itemDiv.appendChild(priceSpan);
-    itemDiv.appendChild(document.createTextNode(" "));
-    itemDiv.appendChild(removeBtn);
-
-    imageList.appendChild(itemDiv);
-
-    // Quantity change event (Fix 1: update pricing on quantity change)
-    qtyInput.addEventListener('change', () => {
-      let newQty = parseInt(qtyInput.value);
-      if (isNaN(newQty) || newQty < 1) {
-        newQty = 1;
-        qtyInput.value = 1;
-      }
-      item.quantity = newQty;
-      // Update the displayed line price (unit price * quantity)
-      priceSpan.textContent = " - $" + (item.price * item.quantity).toFixed(2);
-      updateTotal();
-    });
-
-    // Remove item event (Fix 5: remove item and update total)
-    removeBtn.addEventListener('click', () => {
-      const idx = orderList.indexOf(item);
-      if (idx > -1) {
-        orderList.splice(idx, 1);
-      }
-      imageList.removeChild(itemDiv);
-      updateTotal();
-      // Hide DPI warning if no low-DPI items remain
-      const anyLow = orderList.some(it => it.lowDPI);
-      dpiWarning.style.display = anyLow ? 'block' : 'none';
-    });
-  }
-
-  // Handle form submission to Google Apps Script
-  submitBtn.addEventListener('click', () => {
-    if (orderList.length === 0) {
-      alert("Please upload at least one image before submitting.");
-      return;
-    }
-    // Gather customer info
-    const firstName = document.getElementById('firstName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
-    const email = document.getElementById('email').value.trim();
-    if (!firstName || !lastName || !email) {
-      alert("Please fill in your first name, last name, and email.");
-      return;
-    }
-    // Prepare data payload
-    const orderData = {
-      firstName: firstName,
-      lastName: lastName,
-      email: email,
-      items: orderList.map(item => ({
-        fileName: item.fileName,
-        dataURL: item.dataURL,       // base64 data URL of image
-        widthIn: item.widthIn,
-        heightIn: item.heightIn,
-        quantity: item.quantity,
-        price: item.price.toFixed(2) // price per single print (string format)
-      }))
-    };
-    // TODO: Replace the URL with your Google Apps Script deployment URL
-    const scriptURL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
-    fetch(scriptURL, {
-      method: 'POST',
-      body: JSON.stringify(orderData),
-      headers: { 'Content-Type': 'application/json' }
-    })
-    .then(res => res.json())
-    .then(response => {
-      if (response.result === "success") {
-        alert("Order submitted successfully!");
-        // Reset the form and order list
-        orderList = [];
-        imageList.innerHTML = "";
-        updateTotal();
-        dpiWarning.style.display = 'none';
-        document.getElementById('orderForm').reset();
-      } else {
-        alert("Error submitting order: " + response.error);
-      }
-    })
-    .catch(err => {
-      console.error("Submission error:", err);
-      alert("Failed to submit order. Please try again.");
-    });
-  });
-</script>
-
-<!-- HTML structure (preserved from original, with added hidden field for summary if not already present) -->
-<form id="orderForm" action="YOUR_SCRIPT_URL" method="POST" enctype="multipart/form-data">
-  <!-- File input for images -->
-  <input type="file" id="fileInput" name="images" multiple accept="image/*" required>
-  
-  <!-- Container where each selected image's details will be listed -->
-  <div id="itemsContainer"><!-- Items will be appended here --></div>
-  
-  <!-- Display total price -->
-  <div class="totalLine">Total: $<span id="totalPrice">0.00</span></div>
-  
-  <!-- Hidden field to hold order summary for email -->
-  <input type="hidden" name="orderSummary" id="orderSummary">
-  
-  <!-- Submit button -->
-  <button type="submit" id="submitBtn">Submit Order</button>
-</form>
-
-<script>
-// Pricing rate (per square inch) – preserve your original pricing scheme
-const pricePerSqInch = /** your rate **/;
-
-// Handle file selection
-document.getElementById('fileInput').addEventListener('change', function() {
-  const files = this.files;
-  const itemsContainer = document.getElementById('itemsContainer');
-  itemsContainer.innerHTML = "";        // clear previous items (if any)
-  let totalCost = 0;
-  
-  for (let file of files) {
-    if (!file.type.match('image')) continue;  // skip non-images (just in case)
-    
-    // Create a new item container in the list
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'itemDiv';
-    
-    // File name
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'fileName';
-    nameSpan.textContent = file.name;
-    itemDiv.appendChild(nameSpan);
-    
-    // Create an image to get dimensions (not necessarily added to DOM here)
-    const img = new Image();
-    img.onload = function() {
-      const pxWidth = img.naturalWidth;
-      const pxHeight = img.naturalHeight;
-      
-      // Calculate printed dimensions (in inches) with 22"x40" constraints
-      const maxW = 22, maxH = 40;
-      const origWidthIn = pxWidth / 300;   // assuming 300 DPI baseline for conversion
-      const origHeightIn = pxHeight / 300;
-      // Fit without rotation
-      const scale1 = Math.min(maxW / origWidthIn, maxH / origHeightIn, 1);
-      const width1 = origWidthIn * scale1;
-      const height1 = origHeightIn * scale1;
-      // Fit with rotation
-      const scale2 = Math.min(maxW / origHeightIn, maxH / origWidthIn, 1);
-      const width2 = origHeightIn * scale2;
-      const height2 = origWidthIn * scale2;
-      // Choose orientation that gives larger area
-      let printWidth = width1, printHeight = height1;
-      let rotated = false;
-      if (width2 * height2 > width1 * height1) {
-        printWidth = width2;
-        printHeight = height2;
-        rotated = true;
-      }
-      
-      // Round printed dimensions to 2 decimals for display
-      const dispW = printWidth.toFixed(2);
-      const dispH = printHeight.toFixed(2);
-      
-      // Display dimensions
-      const dimsSpan = document.createElement('span');
-      dimsSpan.className = 'dims';
-      dimsSpan.textContent = ` – ${dispW}" x ${dispH}"`;  // e.g. " – 18.50" x 40.00""
-      itemDiv.appendChild(dimsSpan);
-      
-      // Calculate effective DPI at this print size
-      const dpiX = pxWidth / (rotated ? printHeight : printWidth);
-      const dpiY = pxHeight / (rotated ? printWidth : printHeight);
-      const dpiEffective = Math.min(dpiX, dpiY);
-      if (dpiEffective < 300) {
-        const warn = document.createElement('div');
-        warn.className = 'dpiWarning';
-        warn.style.color = 'red';
-        warn.style.fontStyle = 'italic';
-        warn.textContent = `⚠️ Image DPI ~${Math.round(dpiEffective)} (below 300) – quality may suffer.`;
-        itemDiv.appendChild(warn);
-      }
-      
-      // Pricing for this item
-      const priceWidth = printWidth + 0.24;
-      const priceHeight = printHeight + 0.24;
-      const areaSqIn = priceWidth * priceHeight;
-      const singlePrice = areaSqIn * pricePerSqInch;
-      
-      // Create quantity input
-      const qtyInput = document.createElement('input');
-      qtyInput.type = 'number';
-      qtyInput.min = '1';
-      qtyInput.value = '1';
-      qtyInput.className = 'quantity';
-      itemDiv.appendChild(qtyInput);
-      
-      // Price display for this item (line total)
-      const priceSpan = document.createElement('span');
-      priceSpan.className = 'linePrice';
-      // Initial line price = singlePrice * 1
-      priceSpan.textContent = singlePrice.toFixed(2);
-      // You could prepend a label like " Price: $", if desired for clarity:
-      priceSpan.textContent = `$${priceSpan.textContent}`;
-      itemDiv.appendChild(priceSpan);
-      
-      // Store single price in dataset for easy recalculation
-      itemDiv.dataset.priceSingle = singlePrice.toFixed(2);
-      
-      // Add the item to the container
-      itemsContainer.appendChild(itemDiv);
-      
-      // Update total cost
-      totalCost += singlePrice;
-      document.getElementById('totalPrice').textContent = totalCost.toFixed(2);
-      
-      // Attach quantity change handler
-      qtyInput.addEventListener('input', updateTotals);
-    }; // end img.onload
-    
-    // Trigger image load to get natural dimensions
-    img.src = URL.createObjectURL(file);
-  }
-});
-
-// Recalculate all line totals and grand total (called on any quantity change)
-function updateTotals() {
-  let totalCost = 0;
-  document.querySelectorAll('.itemDiv').forEach(item => {
-    const singlePrice = parseFloat(item.dataset.priceSingle) || 0;
-    const qty = parseInt(item.querySelector('.quantity').value) || 1;
-    const lineTotal = singlePrice * qty;
-    // Update this item's displayed total price
-    const priceSpan = item.querySelector('.linePrice');
-    priceSpan.textContent = `$${lineTotal.toFixed(2)}`;
-    totalCost += lineTotal;
-  });
-  // Update overall total display
-  document.getElementById('totalPrice').textContent = totalCost.toFixed(2);
-}
-
-// Generate summary text for email
-function generateSummaryText() {
-  let summaryLines = [];
-  document.querySelectorAll('.itemDiv').forEach(item => {
-    const fileName = item.querySelector('.fileName').textContent;
-    const dimsText = item.querySelector('.dims').textContent.replace(' – ', ''); 
-    // dimsText now like '18.50" x 40.00"' (without leading dash and space)
-    const qty = item.querySelector('.quantity').value;
-    // linePrice text includes a $ already (e.g. "$50.00"), include it in summary
-    const linePriceText = item.querySelector('.linePrice').textContent;
-    summaryLines.push(`${fileName} – ${dimsText}, Qty: ${qty}, Price: ${linePriceText}`);
-  });
-  const totalText = document.getElementById('totalPrice').textContent;
-  summaryLines.push(`Total: $${totalText}`);
-  return summaryLines.join('\n');
-}
-
-// On form submit, fill the hidden summary field with the compiled text
-document.getElementById('orderForm').addEventListener('submit', function() {
-  document.getElementById('orderSummary').value = generateSummaryText();
-  // Let the form submit normally to the Google Script (which will handle file upload & email)
-});
-</script>
