@@ -170,7 +170,7 @@ function updateTotalPrice() {
     let quantity = parseInt(document.getElementById("quantity").value) || 1;
     
     let pricePerSqIn = 0.10;
-    let totalPrice = width * height * pricePerSqIn * quantity;
+    let totalPrice = width * height * pricePerSqIn * quantity; // ✅ Fixed quantity affecting price
     
     document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
 }
@@ -193,7 +193,7 @@ function addToOrder() {
     reader.onload = function (e) {
         let base64String = e.target.result.split(",")[1];
 
-        let orderList = document.getElementById("orderItems");
+        let orderList = document.getElementById("cartItems");
         let listItem = document.createElement("li");
         let uniqueId = Date.now(); // Unique ID for tracking
 
@@ -213,7 +213,7 @@ function addToOrder() {
         });
 
         let totalCost = uploadedFiles.reduce((sum, item) => sum + parseFloat(item.price), 0);
-        document.getElementById("orderTotal").innerText = `$${totalCost.toFixed(2)}`;
+        document.getElementById("cartTotal").innerText = `$${totalCost.toFixed(2)}`;
 
         fileInput.value = "";
         document.getElementById("uploadedImage").src = "https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png";
@@ -230,7 +230,7 @@ function removeItem(itemId, button) {
     uploadedFiles = uploadedFiles.filter(item => item.id !== itemId);
 
     let newTotal = uploadedFiles.reduce((sum, item) => sum + parseFloat(item.price), 0);
-    document.getElementById("orderTotal").innerText = `$${newTotal.toFixed(2)}`;
+    document.getElementById("cartTotal").innerText = `$${newTotal.toFixed(2)}`;
 }
 
 // SUBMIT ORDER
@@ -251,7 +251,7 @@ function submitOrder() {
         zip: document.getElementById("zip").value.trim(),
         delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Shipping",
         images: uploadedFiles, // Store images properly
-        estimatedTotal: parseFloat(document.getElementById("orderTotal").innerText.replace("$", "")) || 0
+        estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
     };
 
     console.log("Submitting Order:", formData); // Debugging log
@@ -267,8 +267,8 @@ function submitOrder() {
         alert("Order submitted successfully!");
 
         uploadedFiles = [];
-        document.getElementById("orderItems").innerHTML = "";
-        document.getElementById("orderTotal").innerText = "$0.00";
+        document.getElementById("cartItems").innerHTML = "";
+        document.getElementById("cartTotal").innerText = "$0.00";
     })
     .catch(error => {
         console.error("Error:", error);
