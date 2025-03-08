@@ -72,28 +72,48 @@
 </head>
 <body>
     <div class="container">
+        <div class="preview" onclick="document.getElementById('upload').click();">
+            <div class="image-box">
+                <img id="uploadedImage" src="https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png" alt="Click to Upload">
+            </div>
+        </div>
+
         <div class="form-section">
             <h3>Customer Information</h3>
             <label>First Name:</label> <input type="text" id="firstName">
             <label>Last Name:</label> <input type="text" id="lastName">
             <label>Email:</label> <input type="email" id="email">
+            <label>Phone Number:</label> <input type="text" id="phone">
 
-            <h3>Upload Images</h3>
-            <input type="file" id="upload" class="file-upload" accept="image/png" multiple>
-            <p id="dpiWarning">⚠️ One or more images has a DPI below 300 (lower quality print).</p>
+            <h3>Shipping Information</h3>
+            <label>Street:</label> <input type="text" id="street">
+            <label>City:</label> <input type="text" id="city">
+            <label>State:</label> <input type="text" id="state">
+            <label>Zip Code:</label> <input type="text" id="zip">
+            <input type="radio" id="shipping" name="delivery" value="Shipping"> Shipping
+            <input type="radio" id="pickup" name="delivery" value="Pick-Up"> Pick-Up
+        </div>
 
-            <div class="cart-section">
-                <h3>Order</h3>
-                <ul id="cartItems"></ul>
-                <p>Estimated Total: <span id="cartTotal">$0.00</span></p>
-                <button class="checkout-button" id="submitOrderButton">Submit Order</button>
-            </div>
+        <div class="order-details">
+            <h3>Custom Size</h3>
+            <label>Width (inches):</label> <input type="text" id="width" readonly>
+            <label>Height (inches):</label> <input type="text" id="height" readonly>
+            <label>Quantity:</label> <input type="number" id="quantity" value="1" min="1" oninput="updatePricing()">
+            <h3>Total Price: <span id="totalPrice">$0.00</span></h3>
+            <input type="file" id="upload" class="file-upload" accept="image/png">
+            <button class="checkout-button" onclick="addToCart()">ADD TO ORDER</button>
+        </div>
+
+        <div class="cart-section">
+            <h3>Order</h3>
+            <ul id="cartItems"></ul>
+            <p>Estimated Total: <span id="cartTotal">$0.00</span></p>
+            <button class="checkout-button" id="submitOrderButton">Submit Order for Review</button>
         </div>
     </div>
 
     <script>
         let uploadedFiles = [];
-        const pricePerSqInch = 0.10; // Adjust this based on your pricing rate
 
         document.getElementById("upload").addEventListener("change", function(event) {
             let files = event.target.files;
@@ -119,7 +139,7 @@
                         width += 0.24;
                         height += 0.24;
 
-                        let totalPrice = width * height * pricePerSqInch;
+                        let totalPrice = width * height * 0.10;
 
                         let listItem = document.createElement("li");
                         listItem.innerHTML = `${file.name} (${width.toFixed(2)}" x ${height.toFixed(2)}" inches) 
@@ -145,15 +165,6 @@
             }
         });
 
-        function updateItemPrice(event) {
-            let input = event.target;
-            let priceElement = input.parentElement.querySelector(".price");
-            let basePrice = parseFloat(input.dataset.price);
-            let quantity = parseInt(input.value) || 1;
-            priceElement.textContent = `$${(basePrice * quantity).toFixed(2)}`;
-            updateTotal();
-        }
-
         function updateTotal() {
             let total = 0;
             document.querySelectorAll(".price").forEach(priceElement => {
@@ -161,47 +172,6 @@
             });
             document.getElementById("cartTotal").textContent = `$${total.toFixed(2)}`;
         }
-
-        document.getElementById("submitOrderButton").addEventListener("click", function() {
-            let firstName = document.getElementById("firstName").value.trim();
-            let lastName = document.getElementById("lastName").value.trim();
-            let email = document.getElementById("email").value.trim();
-
-            if (!firstName || !lastName || !email) {
-                alert("Please fill in your contact details.");
-                return;
-            }
-
-            let orderData = {
-                firstName,
-                lastName,
-                email,
-                files: uploadedFiles.map(f => ({
-                    name: f.file.name,
-                    width: f.width,
-                    height: f.height,
-                    price: f.price
-                }))
-            };
-
-            fetch("https://script.google.com/macros/s/AKfycbwGCh8ewlHW9ncx5HcvHN1kXPc7Osro_uWbZD5lWsUDYu6m2QprA0CZ1zGBlQ1la3y8/exec", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(orderData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert("Order submitted successfully!");
-                document.getElementById("cartItems").innerHTML = "";
-                document.getElementById("cartTotal").textContent = "$0.00";
-                document.getElementById("dpiWarning").style.display = "none";
-                uploadedFiles = [];
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Failed to submit order.");
-            });
-        });
     </script>
 </body>
 </html>
