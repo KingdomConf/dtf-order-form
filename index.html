@@ -114,65 +114,89 @@
 
     <script>
         let uploadedFiles = [];
+        const pricePerSqInch = 0.10; 
 
         document.getElementById("upload").addEventListener("change", function(event) {
-            let files = event.target.files;
-            for (let file of files) {
-                if (!file.name.endsWith(".png")) {
-                    alert("Only PNG files are allowed.");
-                    return;
-                }
+            let file = event.target.files[0];
+            if (!file) return;
 
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    let img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        let width = img.width / 300;
-                        let height = img.height / 300;
-                        let dpi = Math.min(img.width / width, img.height / height);
-
-                        if (dpi < 300) {
-                            document.getElementById("dpiWarning").style.display = "block";
-                        }
-
-                        width += 0.24;
-                        height += 0.24;
-
-                        let totalPrice = width * height * 0.10;
-
-                        let listItem = document.createElement("li");
-                        listItem.innerHTML = `${file.name} (${width.toFixed(2)}" x ${height.toFixed(2)}" inches) 
-                            Qty: <input type="number" value="1" min="1" class="quantity" data-price="${totalPrice.toFixed(2)}">
-                            Price: <span class="price">$${totalPrice.toFixed(2)}</span>
-                            <span class="remove-button">❌</span>`;
-
-                        document.getElementById("cartItems").appendChild(listItem);
-
-                        uploadedFiles.push({ file, width, height, price: totalPrice });
-
-                        updateTotal();
-
-                        listItem.querySelector(".quantity").addEventListener("input", updateItemPrice);
-                        listItem.querySelector(".remove-button").addEventListener("click", function() {
-                            listItem.remove();
-                            uploadedFiles = uploadedFiles.filter(f => f.file !== file);
-                            updateTotal();
-                        });
-                    };
-                };
-                reader.readAsDataURL(file);
+            if (!file.name.endsWith(".png")) {
+                alert("Only PNG files are allowed.");
+                return;
             }
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById("uploadedImage").src = e.target.result;
+
+                let img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    let width = img.width / 300;
+                    let height = img.height / 300;
+
+                    width += 0.24;
+                    height += 0.24;
+
+                    if (width > 22) width = 22;
+                    if (height > 40) height = 40;
+
+                    document.getElementById("width").value = width.toFixed(2);
+                    document.getElementById("height").value = height.toFixed(2);
+
+                    updatePricing();
+                };
+            };
+
+            reader.readAsDataURL(file);
         });
+
+        function updatePricing() {
+            let width = parseFloat(document.getElementById("width").value) || 0;
+            let height = parseFloat(document.getElementById("height").value) || 0;
+            let quantity = parseInt(document.getElementById("quantity").value) || 1;
+
+            let totalPrice = width * height * pricePerSqInch * quantity;
+            document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
+        }
+
+        function addToCart() {
+            let width = document.getElementById("width").value;
+            let height = document.getElementById("height").value;
+            let quantity = document.getElementById("quantity").value;
+            let totalPrice = parseFloat(document.getElementById("totalPrice").innerText.replace("$", "")) || 0;
+            let fileInput = document.getElementById("upload");
+            let file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please upload an image before adding to order.");
+                return;
+            }
+
+            let orderList = document.getElementById("cartItems");
+            let listItem = document.createElement("li");
+            listItem.innerHTML = `${file.name} (${width}" x ${height}" inches) Qty: ${quantity}, Price: $${totalPrice.toFixed(2)}
+                <span class="remove-button" onclick="removeItem(this)">❌</span>`;
+
+            orderList.appendChild(listItem);
+
+            uploadedFiles.push({ file, width, height, quantity, price: totalPrice });
+
+            updateTotal();
+        }
+
+        function removeItem(button) {
+            button.parentElement.remove();
+            updateTotal();
+        }
 
         function updateTotal() {
             let total = 0;
-            document.querySelectorAll(".price").forEach(priceElement => {
-                total += parseFloat(priceElement.textContent.replace("$", ""));
+            document.querySelectorAll("#cartItems li").forEach(item => {
+                total += parseFloat(item.innerText.split("Price: $")[1]) || 0;
             });
-            document.getElementById("cartTotal").textContent = `$${total.toFixed(2)}`;
+            document.getElementById("cartTotal").innerText = `$${total.toFixed(2)}`;
         }
     </script>
 </body>
 </html>
-
