@@ -23,22 +23,6 @@
             padding: 10px;
             border-radius: 10px;
         }
-        .image-box {
-            width: 100%;
-            max-width: 450px;
-            height: 450px;
-            border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            cursor: pointer;
-        }
-        .image-box img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
         .checkout-button {
             width: 100%;
             background-color: #0078FF;
@@ -63,21 +47,10 @@
             color: red;
             cursor: pointer;
         }
-        #dpiWarning {
-            color: red;
-            font-weight: bold;
-            display: none;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="preview" onclick="document.getElementById('upload').click();">
-            <div class="image-box">
-                <img id="uploadedImage" src="https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png" alt="Click to Upload">
-            </div>
-        </div>
-
         <div class="form-section">
             <h3>Customer Information</h3>
             <label>First Name:</label> <input type="text" id="firstName">
@@ -127,8 +100,6 @@
 
             let reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById("uploadedImage").src = e.target.result;
-
                 let img = new Image();
                 img.src = e.target.result;
                 img.onload = function() {
@@ -147,7 +118,6 @@
                     updatePricing();
                 };
             };
-
             reader.readAsDataURL(file);
         });
 
@@ -197,6 +167,39 @@
             });
             document.getElementById("cartTotal").innerText = `$${total.toFixed(2)}`;
         }
+
+        document.getElementById("submitOrderButton").addEventListener("click", function() {
+            let customerInfo = {
+                firstName: document.getElementById("firstName").value,
+                lastName: document.getElementById("lastName").value,
+                email: document.getElementById("email").value,
+                phone: document.getElementById("phone").value,
+                street: document.getElementById("street").value,
+                city: document.getElementById("city").value,
+                state: document.getElementById("state").value,
+                zip: document.getElementById("zip").value,
+                delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Shipping",
+                items: uploadedFiles,
+                total: document.getElementById("cartTotal").innerText
+            };
+
+            fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(customerInfo)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Order submitted successfully!");
+                document.getElementById("cartItems").innerHTML = "";
+                document.getElementById("cartTotal").textContent = "$0.00";
+                uploadedFiles = [];
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error submitting order.");
+            });
+        });
     </script>
 </body>
 </html>
