@@ -232,7 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("cartTotal").innerText = `$${newTotal.toFixed(2)}`;
     }
 
-   function submitOrder() {
+ function submitOrder() {
     let firstName = document.getElementById("firstName").value.trim();
     let lastName = document.getElementById("lastName").value.trim();
     let email = document.getElementById("email").value.trim();
@@ -263,11 +263,11 @@ document.addEventListener("DOMContentLoaded", function () {
         state,
         zip,
         delivery,
-        images: uploadedFiles, // Stores all uploaded files
+        images: uploadedFiles, // Store images properly
         estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
     };
 
-    console.log("Submitting Order:", formData); // ✅ Debugging to check form values
+    console.log("Submitting Order:", formData); // ✅ Debugging Log
 
     fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
         method: "POST",
@@ -276,17 +276,17 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .then(response => response.json())
     .then(data => {
-        console.log("Success:", data);
-        alert("Order submitted successfully!");
+        console.log("✅ Success:", data);
+        alert("✅ Order submitted successfully!");
 
-        // Reset form after successful submission
+        // Reset form after submission
         uploadedFiles = [];
         document.getElementById("cartItems").innerHTML = "";
         document.getElementById("cartTotal").innerText = "$0.00";
     })
     .catch(error => {
-        console.error("Error:", error);
-        alert("Error submitting order. Check console for details.");
+        console.error("❌ Error:", error);
+        alert("❌ Error submitting order. Check console for details.");
     });
 }
     // Ensure submit button works
