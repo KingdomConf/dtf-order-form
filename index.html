@@ -232,7 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("cartTotal").innerText = `$${newTotal.toFixed(2)}`;
     }
 
- function submitOrder() {
+function submitOrder() {
     let firstName = document.getElementById("firstName").value.trim();
     let lastName = document.getElementById("lastName").value.trim();
     let email = document.getElementById("email").value.trim();
@@ -263,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function () {
         state,
         zip,
         delivery,
-        images: uploadedFiles, // Store images properly
+        images: uploadedFiles,
         estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
     };
 
@@ -271,7 +271,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify(formData)
     })
     .then(response => response.json())
@@ -279,7 +281,6 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("✅ Success:", data);
         alert("✅ Order submitted successfully!");
 
-        // Reset form after submission
         uploadedFiles = [];
         document.getElementById("cartItems").innerHTML = "";
         document.getElementById("cartTotal").innerText = "$0.00";
