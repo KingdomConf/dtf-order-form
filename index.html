@@ -269,7 +269,7 @@ function submitOrder() {
 
     console.log("Submitting Order:", formData); // ✅ Debugging Log
 
-    fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+    fetch("https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec"), {
         method: "POST",
         headers: { 
             "Content-Type": "application/json"
@@ -290,6 +290,7 @@ function submitOrder() {
         alert("❌ Error submitting order. Check console for details.");
     });
 }
+
     // Ensure submit button works
     document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
 
