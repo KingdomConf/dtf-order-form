@@ -74,6 +74,11 @@
             color: red;
             cursor: pointer;
         }
+        #dpiWarning {
+            color: red;
+            font-size: 14px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -83,14 +88,12 @@
                 <img id="uploadedImage" src="https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png" alt="Click to Upload">
             </div>
         </div>
-
         <div class="form-section">
             <h3>Customer Information</h3>
             <label>First Name:</label> <input type="text" id="firstName">
             <label>Last Name:</label> <input type="text" id="lastName">
             <label>Email:</label> <input type="email" id="email">
             <label>Phone Number:</label> <input type="text" id="phone">
-
             <h3>Shipping Information</h3>
             <label>Street:</label> <input type="text" id="street">
             <label>City:</label> <input type="text" id="city">
@@ -99,17 +102,16 @@
             <input type="radio" id="shipping" name="delivery" value="Shipping"> Shipping
             <input type="radio" id="pickup" name="delivery" value="Pick-Up"> Pick-Up
         </div>
-
         <div class="order-details">
             <h3>Custom Size</h3>
             <label>Width (inches):</label> <input type="text" id="width" readonly>
             <label>Height (inches):</label> <input type="text" id="height" readonly>
-            <label>Quantity:</label> <input type="number" id="quantity" value="1" min="1" oninput="updatePricing()">
+            <label>Quantity:</label> <input type="number" id="quantity" value="1" min="1">
             <h3>Total Price: <span id="totalPrice">$0.00</span></h3>
             <input type="file" id="upload" class="file-upload" accept="image/png">
+            <p id="dpiWarning">Warning: Image DPI is below 300 (print quality).</p>
             <button class="checkout-button" onclick="addToCart()">ADD TO ORDER</button>
         </div>
-
         <div class="cart-section">
             <h3>Order</h3>
             <ul id="cartItems"></ul>
@@ -117,186 +119,41 @@
             <button class="checkout-button" id="submitOrderButton">Submit Order for Review</button>
         </div>
     </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
     <script>
-  // Ensure script only runs after DOM is fully loaded
-document.addEventListener("DOMContentLoaded", function () {
-    let uploadedFiles = []; // Stores uploaded images & details
-
-    // IMAGE UPLOAD FUNCTION
-    document.getElementById("upload").addEventListener("change", function(event) {
-        let file = event.target.files[0];
-
-        if (!file) return;
-        if (!file.name.endsWith(".png")) {
-            alert("Only PNG files are allowed.");
-            return;
-        }
-
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let img = new Image();
-            img.src = e.target.result;
-
-            img.onload = function() {
-                let originalWidth = img.width;
-                let originalHeight = img.height;
-
-                let widthInches = (originalWidth / 300).toFixed(2);
-                let heightInches = (originalHeight / 300).toFixed(2);
-
-                widthInches = (parseFloat(widthInches) + 0.48).toFixed(2);
-                heightInches = (parseFloat(heightInches) + 0.48).toFixed(2);
-
-                if (widthInches > 22) widthInches = 22;
-                if (heightInches > 40) heightInches = 40;
-
-                document.getElementById("width").value = widthInches;
-                document.getElementById("height").value = heightInches;
-                updatePricing();
+        document.getElementById("upload").addEventListener("change", function(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            if (!file.name.endsWith(".png")) {
+                alert("Only PNG files are allowed.");
+                return;
+            }
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    let width = img.width / 300;
+                    let height = img.height / 300;
+                    width = Math.min(width + 0.48, 22);
+                    height = Math.min(height + 0.48, 40);
+                    document.getElementById("width").value = width.toFixed(2);
+                    document.getElementById("height").value = height.toFixed(2);
+                    updatePricing();
+                    document.getElementById("uploadedImage").src = e.target.result;
+                };
             };
-
-            document.getElementById("uploadedImage").src = e.target.result;
-        };
-
-        reader.readAsDataURL(file);
-    });
-
-    // PRICE CALCULATION FUNCTION
-    function updatePricing() {
-        let width = parseFloat(document.getElementById("width").value) || 0;
-        let height = parseFloat(document.getElementById("height").value) || 0;
-        let quantity = parseInt(document.getElementById("quantity").value) || 1;
-        
-        let pricePerSqIn = 0.10;
-        let totalPrice = width * height * pricePerSqIn * quantity; // ✅ Fixed quantity affecting price
-        
-        document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
-    }
-
-    // ADD IMAGE TO ORDER LIST
-    function addToCart() {
-        let width = document.getElementById("width").value;
-        let height = document.getElementById("height").value;
-        let quantity = document.getElementById("quantity").value;
-        let totalPrice = parseFloat(document.getElementById("totalPrice").innerText.replace("$", "")) || 0;
-        let fileInput = document.getElementById("upload");
-        let file = fileInput.files[0];
-
-        if (!file) {
-            alert("Please upload an image before adding to order.");
-            return;
+            reader.readAsDataURL(file);
+        });
+        function updatePricing() {
+            let width = parseFloat(document.getElementById("width").value) || 0;
+            let height = parseFloat(document.getElementById("height").value) || 0;
+            let quantity = parseInt(document.getElementById("quantity").value) || 1;
+            let pricePerSqIn = 0.10;
+            let totalPrice = width * height * pricePerSqIn * quantity;
+            document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
         }
-
-        let reader = new FileReader();
-        reader.onload = function (e) {
-            let base64String = e.target.result.split(",")[1];
-
-            let orderList = document.getElementById("cartItems");
-            let listItem = document.createElement("li");
-            let uniqueId = Date.now(); // Unique ID for tracking
-
-            listItem.innerHTML = `File: ${file.name} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: $${totalPrice.toFixed(2)}
-                <span class="remove-button" onclick="removeItem(${uniqueId}, this)">❌</span>`;
-            
-            orderList.appendChild(listItem);
-
-            uploadedFiles.push({
-                id: uniqueId,
-                fileName: file.name,
-                width,
-                height,
-                quantity,
-                price: totalPrice,
-                image: base64String // Store image data for submission
-            });
-
-            let totalCost = uploadedFiles.reduce((sum, item) => sum + parseFloat(item.price), 0);
-            document.getElementById("cartTotal").innerText = `$${totalCost.toFixed(2)}`;
-
-            fileInput.value = "";
-            document.getElementById("uploadedImage").src = "https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png";
-        };
-
-        reader.readAsDataURL(file);
-    }
-
-    // REMOVE ITEM FROM ORDER
-    function removeItem(itemId, button) {
-        let item = button.parentNode;
-        item.remove();
-
-        uploadedFiles = uploadedFiles.filter(item => item.id !== itemId);
-
-        let newTotal = uploadedFiles.reduce((sum, item) => sum + parseFloat(item.price), 0);
-        document.getElementById("cartTotal").innerText = `$${newTotal.toFixed(2)}`;
-    }
-
-function submitOrder() {
-    let firstName = document.getElementById("firstName").value.trim();
-    let lastName = document.getElementById("lastName").value.trim();
-    let email = document.getElementById("email").value.trim();
-    let phone = document.getElementById("phone").value.trim();
-    let street = document.getElementById("street").value.trim();
-    let city = document.getElementById("city").value.trim();
-    let state = document.getElementById("state").value.trim();
-    let zip = document.getElementById("zip").value.trim();
-    let delivery = document.querySelector('input[name="delivery"]:checked')?.value || "Shipping";
-
-    if (!firstName || !lastName || !email || !phone) {
-        alert("Please fill out all required fields.");
-        return;
-    }
-
-    if (uploadedFiles.length === 0) {
-        alert("Your order is empty. Please add images before submitting.");
-        return;
-    }
-
-    let formData = {
-        firstName,
-        lastName,
-        email,
-        phone,
-        street,
-        city,
-        state,
-        zip,
-        delivery,
-        images: uploadedFiles,
-        estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
-    };
-
-    console.log("Submitting Order:", formData); // ✅ Debugging Log
-
-    fetch("https://script.google.com/macros/s/AKfycbwGCh8ewlHW9ncx5HcvHN1kXPc7Osro_uWbZD5lWsUDYu6m2QprA0CZ1zGBlQ1la3y8/exec", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  mode: "cors", // ✅ Allow CORS
-  body: JSON.stringify(formData)
-})
-.then(response => response.json())
-.then(data => {
-  console.log("Success:", data);
-  alert("Order submitted successfully!");
-})
-.catch(error => {
-  console.error("Error:", error);
-  alert("Error submitting order. Check console for details.");
-});
-
-
-
-    // Ensure submit button works
-    document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
-
-    // Make functions globally accessible
-    window.updatePricing = updatePricing;
-    window.addToCart = addToCart;
-});
-
     </script>
 </body>
 </html>
+
