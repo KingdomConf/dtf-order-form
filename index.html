@@ -53,7 +53,7 @@
         .checkout-button:hover {
             background-color: #0056b3;
         }
-        .cart-section {
+        .order-section {
             width: 100%;
             margin-top: 20px;
             text-align: center;
@@ -62,11 +62,6 @@
             margin-left: 10px;
             color: red;
             cursor: pointer;
-        }
-        #dpiWarning {
-            color: red;
-            font-weight: bold;
-            display: none;
         }
     </style>
 </head>
@@ -98,22 +93,22 @@
             <h3>Custom Size</h3>
             <label>Width (inches):</label> <input type="text" id="width" readonly>
             <label>Height (inches):</label> <input type="text" id="height" readonly>
-            <label>Quantity:</label> <input type="number" id="quantity" value="1" min="1" oninput="updatePricing()">
+            <label>Quantity:</label> <input type="number" id="quantity" value="1" min="1" oninput="updatePrice()">
             <h3>Total Price: <span id="totalPrice">$0.00</span></h3>
             <input type="file" id="upload" class="file-upload" accept="image/png">
-            <button class="checkout-button" onclick="addToCart()">ADD TO ORDER</button>
+            <button class="checkout-button" onclick="addToOrder()">ADD TO ORDER</button>
         </div>
 
-        <div class="cart-section">
-            <h3>Order</h3>
-            <ul id="cartItems"></ul>
-            <p>Estimated Total: <span id="cartTotal">$0.00</span></p>
+        <div class="order-section">
+            <h3>Order Summary</h3>
+            <ul id="orderList"></ul>
+            <p>Estimated Total: <span id="orderTotal">$0.00</span></p>
             <button class="checkout-button" id="submitOrderButton">Submit Order for Review</button>
         </div>
     </div>
 
     <script>
-        let uploadedFiles = [];
+        let orderItems = [];
         const pricePerSqInch = 0.10; 
 
         document.getElementById("upload").addEventListener("change", function(event) {
@@ -139,13 +134,13 @@
                     document.getElementById("width").value = width.toFixed(2);
                     document.getElementById("height").value = height.toFixed(2);
 
-                    updatePricing();
+                    updatePrice();
                 };
             };
             reader.readAsDataURL(file);
         });
 
-        function updatePricing() {
+        function updatePrice() {
             let width = parseFloat(document.getElementById("width").value) || 0;
             let height = parseFloat(document.getElementById("height").value) || 0;
             let quantity = parseInt(document.getElementById("quantity").value) || 1;
@@ -154,18 +149,51 @@
             document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
         }
 
+        function addToOrder() {
+            let fileInput = document.getElementById("upload");
+            let file = fileInput.files[0];
+            if (!file) {
+                alert("Please upload an image before adding to the order.");
+                return;
+            }
+
+            let width = document.getElementById("width").value;
+            let height = document.getElementById("height").value;
+            let quantity = document.getElementById("quantity").value;
+            let totalPrice = parseFloat(document.getElementById("totalPrice").innerText.replace("$", "")) || 0;
+
+            let orderList = document.getElementById("orderList");
+            let listItem = document.createElement("li");
+            listItem.innerHTML = `${file.name} (${width}" x ${height}" inches) Qty: ${quantity}, Price: $${totalPrice.toFixed(2)}
+                <span class="remove-button" onclick="removeOrderItem(this)">❌</span>`;
+
+            orderList.appendChild(listItem);
+
+            orderItems.push({ file, width, height, quantity, price: totalPrice });
+
+            updateTotal();
+        }
+
+        function removeOrderItem(button) {
+            button.parentElement.remove();
+            updateTotal();
+        }
+
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll("#orderList li").forEach(item => {
+                total += parseFloat(item.innerText.split("Price: $")[1]) || 0;
+            });
+            document.getElementById("orderTotal").innerText = `$${total.toFixed(2)}`;
+        }
+
         document.getElementById("submitOrderButton").addEventListener("click", function() {
             let orderData = {
                 firstName: document.getElementById("firstName").value,
                 lastName: document.getElementById("lastName").value,
                 email: document.getElementById("email").value,
                 phone: document.getElementById("phone").value,
-                street: document.getElementById("street").value,
-                city: document.getElementById("city").value,
-                state: document.getElementById("state").value,
-                zip: document.getElementById("zip").value,
-                delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Shipping",
-                total: document.getElementById("cartTotal").innerText
+                total: document.getElementById("orderTotal").innerText
             };
 
             fetch("https://script.google.com/macros/s/AKfycbwGCh8ewlHW9ncx5HcvHN1kXPc7Osro_uWbZD5lWsUDYu6m2QprA0CZ1zGBlQ1la3y8/exec", {
@@ -174,13 +202,8 @@
                 body: JSON.stringify(orderData)
             })
             .then(response => response.json())
-            .then(data => {
-                alert("Order submitted successfully!");
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Error submitting order.");
-            });
+            .then(() => alert("Order submitted successfully!"))
+            .catch(() => alert("Error submitting order."));
         });
     </script>
 </body>
