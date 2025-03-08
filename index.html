@@ -269,27 +269,24 @@ function submitOrder() {
 
     console.log("Submitting Order:", formData); // ✅ Debugging Log
 
-    fetch("https://script.google.com/macros/s/AKfycbwGCh8ewlHW9ncx5HcvHN1kXPc7Osro_uWbZD5lWsUDYu6m2QprA0CZ1zGBlQ1la3y8/exec", {  // 🚀 REPLACE THIS WITH YOUR NEW URL
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("✅ Success:", data);
-        alert("✅ Order submitted successfully!");
+    fetch("https://script.google.com/macros/s/AKfycbwGCh8ewlHW9ncx5HcvHN1kXPc7Osro_uWbZD5lWsUDYu6m2QprA0CZ1zGBlQ1la3y8/exec", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  mode: "cors", // ✅ Allow CORS
+  body: JSON.stringify(formData)
+})
+.then(response => response.json())
+.then(data => {
+  console.log("Success:", data);
+  alert("Order submitted successfully!");
+})
+.catch(error => {
+  console.error("Error:", error);
+  alert("Error submitting order. Check console for details.");
+});
 
-        uploadedFiles = [];
-        document.getElementById("cartItems").innerHTML = "";
-        document.getElementById("cartTotal").innerText = "$0.00";
-    })
-    .catch(error => {
-        console.error("❌ Error:", error);
-        alert("❌ Error submitting order. Check console for details.");
-    });
-}
 
 
     // Ensure submit button works
