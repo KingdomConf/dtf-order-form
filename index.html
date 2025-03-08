@@ -23,6 +23,22 @@
             padding: 10px;
             border-radius: 10px;
         }
+        .image-box {
+            width: 100%;
+            max-width: 450px;
+            height: 450px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
         .checkout-button {
             width: 100%;
             background-color: #0078FF;
@@ -47,10 +63,21 @@
             color: red;
             cursor: pointer;
         }
+        #dpiWarning {
+            color: red;
+            font-weight: bold;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="preview" onclick="document.getElementById('upload').click();">
+            <div class="image-box">
+                <img id="uploadedImage" src="https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png" alt="Click to Upload">
+            </div>
+        </div>
+
         <div class="form-section">
             <h3>Customer Information</h3>
             <label>First Name:</label> <input type="text" id="firstName">
@@ -86,90 +113,19 @@
     </div>
 
     <script>
-        let uploadedFiles = [];
-        const pricePerSqInch = 0.10; 
-
         document.getElementById("upload").addEventListener("change", function(event) {
             let file = event.target.files[0];
             if (!file) return;
 
-            if (!file.name.endsWith(".png")) {
-                alert("Only PNG files are allowed.");
-                return;
-            }
-
             let reader = new FileReader();
             reader.onload = function(e) {
-                let img = new Image();
-                img.src = e.target.result;
-                img.onload = function() {
-                    let width = img.width / 300;
-                    let height = img.height / 300;
-
-                    width += 0.24;
-                    height += 0.24;
-
-                    if (width > 22) width = 22;
-                    if (height > 40) height = 40;
-
-                    document.getElementById("width").value = width.toFixed(2);
-                    document.getElementById("height").value = height.toFixed(2);
-
-                    updatePricing();
-                };
+                document.getElementById("uploadedImage").src = e.target.result;
             };
             reader.readAsDataURL(file);
         });
 
-        function updatePricing() {
-            let width = parseFloat(document.getElementById("width").value) || 0;
-            let height = parseFloat(document.getElementById("height").value) || 0;
-            let quantity = parseInt(document.getElementById("quantity").value) || 1;
-
-            let totalPrice = width * height * pricePerSqInch * quantity;
-            document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
-        }
-
-        function addToCart() {
-            let width = document.getElementById("width").value;
-            let height = document.getElementById("height").value;
-            let quantity = document.getElementById("quantity").value;
-            let totalPrice = parseFloat(document.getElementById("totalPrice").innerText.replace("$", "")) || 0;
-            let fileInput = document.getElementById("upload");
-            let file = fileInput.files[0];
-
-            if (!file) {
-                alert("Please upload an image before adding to order.");
-                return;
-            }
-
-            let orderList = document.getElementById("cartItems");
-            let listItem = document.createElement("li");
-            listItem.innerHTML = `${file.name} (${width}" x ${height}" inches) Qty: ${quantity}, Price: $${totalPrice.toFixed(2)}
-                <span class="remove-button" onclick="removeItem(this)">❌</span>`;
-
-            orderList.appendChild(listItem);
-
-            uploadedFiles.push({ file, width, height, quantity, price: totalPrice });
-
-            updateTotal();
-        }
-
-        function removeItem(button) {
-            button.parentElement.remove();
-            updateTotal();
-        }
-
-        function updateTotal() {
-            let total = 0;
-            document.querySelectorAll("#cartItems li").forEach(item => {
-                total += parseFloat(item.innerText.split("Price: $")[1]) || 0;
-            });
-            document.getElementById("cartTotal").innerText = `$${total.toFixed(2)}`;
-        }
-
         document.getElementById("submitOrderButton").addEventListener("click", function() {
-            let customerInfo = {
+            let orderData = {
                 firstName: document.getElementById("firstName").value,
                 lastName: document.getElementById("lastName").value,
                 email: document.getElementById("email").value,
@@ -179,21 +135,17 @@
                 state: document.getElementById("state").value,
                 zip: document.getElementById("zip").value,
                 delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Shipping",
-                items: uploadedFiles,
                 total: document.getElementById("cartTotal").innerText
             };
 
-            fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+            fetch("https://script.google.com/macros/s/AKfycbwGCh8ewlHW9ncx5HcvHN1kXPc7Osro_uWbZD5lWsUDYu6m2QprA0CZ1zGBlQ1la3y8/exec", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(customerInfo)
+                body: JSON.stringify(orderData)
             })
             .then(response => response.json())
             .then(data => {
                 alert("Order submitted successfully!");
-                document.getElementById("cartItems").innerHTML = "";
-                document.getElementById("cartTotal").textContent = "$0.00";
-                uploadedFiles = [];
             })
             .catch(error => {
                 console.error("Error:", error);
