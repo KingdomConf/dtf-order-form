@@ -180,39 +180,70 @@ function addToCart() {
     let width = document.getElementById("width").value;
     let height = document.getElementById("height").value;
     let quantity = document.getElementById("quantity").value;
-    let totalPrice = document.getElementById("totalPrice").innerText;
+    let totalPrice = parseFloat(document.getElementById("totalPrice").innerText.replace("$", "")) || 0;
+    let fileInput = document.getElementById("upload");
+    let file = fileInput.files[0];
 
-    let cartList = document.getElementById("cartItems");
-    let listItem = document.createElement("li");
-    listItem.innerHTML = `File: ${uploadedFileName} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: ${totalPrice} 
-        <span class="remove-button" onclick="removeItem(this)">❌</span>`;
+    if (!file) {
+        alert("Please upload an image before adding to the order.");
+        return;
+    }
 
-    cartList.appendChild(listItem);
-    cart.push({ file: uploadedFileName, width, height, quantity, price: totalPrice });
+    let reader = new FileReader();
+    reader.onload = function (e) {
+        let base64String = e.target.result.split(",")[1]; // Extract Base64 content
 
-    let cartTotal = parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0;
-    cartTotal += parseFloat(totalPrice.replace("$", ""));
+        let cartList = document.getElementById("cartItems");
+        let listItem = document.createElement("li");
+        let uniqueId = Date.now(); // Unique ID for removal reference
 
-    document.getElementById("cartTotal").innerText = `$${cartTotal.toFixed(2)}`;
+        listItem.innerHTML = `File: ${file.name} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: $${totalPrice.toFixed(2)}
+            <span class="remove-button" onclick="removeItem(${uniqueId}, this)">❌</span>`;
+        
+        cartList.appendChild(listItem);
+
+        cart.push({
+            id: uniqueId,
+            fileName: file.name,
+            width,
+            height,
+            quantity,
+            price: totalPrice,
+            image: base64String // Store image data for submission
+        });
+
+        let cartTotal = parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0;
+        cartTotal += totalPrice;
+        document.getElementById("cartTotal").innerText = `$${cartTotal.toFixed(2)}`;
+        
+        // Reset file input for new uploads
+        fileInput.value = "";
+        document.getElementById("uploadedImage").src = "https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png";
+    };
+
+    reader.readAsDataURL(file);
 }
 
 // REMOVE ITEM FUNCTION
-function removeItem(button) {
+function removeItem(itemId, button) {
     let item = button.parentNode;
     item.remove();
-    updatePricing();
+
+    cart = cart.filter(orderItem => orderItem.id !== itemId); // Remove from array
+
+    // Recalculate total price after removing item
+    let newTotal = cart.reduce((sum, item) => sum + parseFloat(item.price), 0);
+    document.getElementById("cartTotal").innerText = `$${newTotal.toFixed(2)}`;
 }
 
+// SUBMIT ORDER FUNCTION
 function submitOrder() {
-    let fileInput = document.getElementById("upload");
-    let file = fileInput.files[0];
+    if (cart.length === 0) {
+        alert("Your order is empty. Please add items before submitting.");
+        return;
     }
-let reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = function () {
-        let base64String = reader.result.split(",")[1]; // Extract Base64 content
 
-        let formData = {
+    let formData = {
         firstName: document.getElementById("firstName").value.trim(),
         lastName: document.getElementById("lastName").value.trim(),
         email: document.getElementById("email").value.trim(),
@@ -221,27 +252,36 @@ let reader = new FileReader();
         city: document.getElementById("city").value.trim(),
         state: document.getElementById("state").value.trim(),
         zip: document.getElementById("zip").value.trim(),
-        delivery: document.querySelector('input[name="delivery"]:checked') ? document.querySelector('input[name="delivery"]:checked').value : "Shipping",
-        cart: JSON.stringify(cart), // Ensure cart is properly formatted
+        delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Shipping",
+        cart: cart, // Keep cart array format
         estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
     };
-    
- fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(formData)
-})
-.then(response => response.json())
-.then(data => {
-    console.log("Success:", data);
-    alert("Order submitted successfully!");
-})
-.catch(error => {
-    console.error("Error:", error);
-    alert("Error submitting order. Check console for details.");
-});
-       
- 
+
+    console.log("Submitting Order:", formData); // Debugging log
+
+    fetch("https://script.google.com/macros/s/AKfycbzOcI_F0pPEbPsy2lBrK0sKjtvsmYPdyeX-GaRvhMtmtfCQOAWSTIiVH-NuFowiMwZh/exec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Success:", data);
+        alert("Order submitted successfully!");
+
+        // Reset order after successful submission
+        cart = [];
+        document.getElementById("cartItems").innerHTML = "";
+        document.getElementById("cartTotal").innerText = "$0.00";
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Error submitting order. Check console for details.");
+    });
+}
+
+// Ensure submit button works
+document.getElementById("submitOrderButton").addEventListener("click", submitOrder);
 }
     </script>
 </body>
