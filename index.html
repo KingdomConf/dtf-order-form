@@ -113,6 +113,9 @@
     </div>
 
     <script>
+        let uploadedFiles = [];
+        const pricePerSqInch = 0.10; 
+
         document.getElementById("upload").addEventListener("change", function(event) {
             let file = event.target.files[0];
             if (!file) return;
@@ -120,9 +123,36 @@
             let reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById("uploadedImage").src = e.target.result;
+
+                let img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    let width = img.width / 300;
+                    let height = img.height / 300;
+
+                    width += 0.24;
+                    height += 0.24;
+
+                    if (width > 22) width = 22;
+                    if (height > 40) height = 40;
+
+                    document.getElementById("width").value = width.toFixed(2);
+                    document.getElementById("height").value = height.toFixed(2);
+
+                    updatePricing();
+                };
             };
             reader.readAsDataURL(file);
         });
+
+        function updatePricing() {
+            let width = parseFloat(document.getElementById("width").value) || 0;
+            let height = parseFloat(document.getElementById("height").value) || 0;
+            let quantity = parseInt(document.getElementById("quantity").value) || 1;
+
+            let totalPrice = width * height * pricePerSqInch * quantity;
+            document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
+        }
 
         document.getElementById("submitOrderButton").addEventListener("click", function() {
             let orderData = {
