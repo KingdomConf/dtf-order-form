@@ -122,49 +122,49 @@
    let uploadedFileName = "";
 let cart = [];
 
+let uploadedFiles = []; // Stores uploaded images & details
+
 // IMAGE UPLOAD FUNCTION
 document.getElementById("upload").addEventListener("change", function(event) {
     let file = event.target.files[0];
 
-    if (file) {
-        if (!file.name.endsWith(".png")) {
-            alert("Only PNG files are allowed.");
-            return;
-        }
-
-        uploadedFileName = file.name;
-
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let img = new Image();
-            img.src = e.target.result;
-
-            img.onload = function() {
-                let originalWidth = img.width;
-                let originalHeight = img.height;
-
-                let widthInches = (originalWidth / 300).toFixed(2);
-                let heightInches = (originalHeight / 300).toFixed(2);
-
-                widthInches = (parseFloat(widthInches) + 0.48).toFixed(2);
-                heightInches = (parseFloat(heightInches) + 0.48).toFixed(2);
-
-                if (widthInches > 22) widthInches = 22;
-                if (heightInches > 40) heightInches = 40;
-
-                document.getElementById("width").value = widthInches;
-                document.getElementById("height").value = heightInches;
-                updatePricing();
-            };
-
-            document.getElementById("uploadedImage").src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+    if (!file) return;
+    if (!file.name.endsWith(".png")) {
+        alert("Only PNG files are allowed.");
+        return;
     }
+
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let img = new Image();
+        img.src = e.target.result;
+
+        img.onload = function() {
+            let originalWidth = img.width;
+            let originalHeight = img.height;
+
+            let widthInches = (originalWidth / 300).toFixed(2);
+            let heightInches = (originalHeight / 300).toFixed(2);
+
+            widthInches = (parseFloat(widthInches) + 0.48).toFixed(2);
+            heightInches = (parseFloat(heightInches) + 0.48).toFixed(2);
+
+            if (widthInches > 22) widthInches = 22;
+            if (heightInches > 40) heightInches = 40;
+
+            document.getElementById("width").value = widthInches;
+            document.getElementById("height").value = heightInches;
+            updateTotalPrice();
+        };
+
+        document.getElementById("uploadedImage").src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
 });
 
-// PRICING FUNCTION
-function updatePricing() {
+// PRICE CALCULATION FUNCTION
+function updateTotalPrice() {
     let width = parseFloat(document.getElementById("width").value) || 0;
     let height = parseFloat(document.getElementById("height").value) || 0;
     let quantity = parseInt(document.getElementById("quantity").value) || 1;
@@ -175,8 +175,8 @@ function updatePricing() {
     document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(2)}`;
 }
 
-// CART FUNCTIONALITY
-function addToCart() {
+// ADD IMAGE TO ORDER LIST
+function addToOrder() {
     let width = document.getElementById("width").value;
     let height = document.getElementById("height").value;
     let quantity = document.getElementById("quantity").value;
@@ -185,24 +185,24 @@ function addToCart() {
     let file = fileInput.files[0];
 
     if (!file) {
-        alert("Please upload an image before adding to the order.");
+        alert("Please upload an image before adding to order.");
         return;
     }
 
     let reader = new FileReader();
     reader.onload = function (e) {
-        let base64String = e.target.result.split(",")[1]; // Extract Base64 content
+        let base64String = e.target.result.split(",")[1];
 
-        let cartList = document.getElementById("cartItems");
+        let orderList = document.getElementById("orderItems");
         let listItem = document.createElement("li");
-        let uniqueId = Date.now(); // Unique ID for removal reference
+        let uniqueId = Date.now(); // Unique ID for tracking
 
         listItem.innerHTML = `File: ${file.name} - Size: ${width}" x ${height}", Qty: ${quantity}, Price: $${totalPrice.toFixed(2)}
             <span class="remove-button" onclick="removeItem(${uniqueId}, this)">❌</span>`;
         
-        cartList.appendChild(listItem);
+        orderList.appendChild(listItem);
 
-        cart.push({
+        uploadedFiles.push({
             id: uniqueId,
             fileName: file.name,
             width,
@@ -212,11 +212,9 @@ function addToCart() {
             image: base64String // Store image data for submission
         });
 
-        let cartTotal = parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0;
-        cartTotal += totalPrice;
-        document.getElementById("cartTotal").innerText = `$${cartTotal.toFixed(2)}`;
-        
-        // Reset file input for new uploads
+        let totalCost = uploadedFiles.reduce((sum, item) => sum + parseFloat(item.price), 0);
+        document.getElementById("orderTotal").innerText = `$${totalCost.toFixed(2)}`;
+
         fileInput.value = "";
         document.getElementById("uploadedImage").src = "https://static.wixstatic.com/media/321646_28188939058540c2b8da3dcb446411c0~mv2.png";
     };
@@ -224,22 +222,21 @@ function addToCart() {
     reader.readAsDataURL(file);
 }
 
-// REMOVE ITEM FUNCTION
+// REMOVE ITEM FROM ORDER
 function removeItem(itemId, button) {
     let item = button.parentNode;
     item.remove();
 
-    cart = cart.filter(orderItem => orderItem.id !== itemId); // Remove from array
+    uploadedFiles = uploadedFiles.filter(item => item.id !== itemId);
 
-    // Recalculate total price after removing item
-    let newTotal = cart.reduce((sum, item) => sum + parseFloat(item.price), 0);
-    document.getElementById("cartTotal").innerText = `$${newTotal.toFixed(2)}`;
+    let newTotal = uploadedFiles.reduce((sum, item) => sum + parseFloat(item.price), 0);
+    document.getElementById("orderTotal").innerText = `$${newTotal.toFixed(2)}`;
 }
 
-// SUBMIT ORDER FUNCTION
+// SUBMIT ORDER
 function submitOrder() {
-    if (cart.length === 0) {
-        alert("Your order is empty. Please add items before submitting.");
+    if (uploadedFiles.length === 0) {
+        alert("Your order is empty. Please add images before submitting.");
         return;
     }
 
@@ -253,8 +250,8 @@ function submitOrder() {
         state: document.getElementById("state").value.trim(),
         zip: document.getElementById("zip").value.trim(),
         delivery: document.querySelector('input[name="delivery"]:checked')?.value || "Shipping",
-        cart: cart, // Keep cart array format
-        estimatedTotal: parseFloat(document.getElementById("cartTotal").innerText.replace("$", "")) || 0
+        images: uploadedFiles, // Store images properly
+        estimatedTotal: parseFloat(document.getElementById("orderTotal").innerText.replace("$", "")) || 0
     };
 
     console.log("Submitting Order:", formData); // Debugging log
@@ -269,10 +266,9 @@ function submitOrder() {
         console.log("Success:", data);
         alert("Order submitted successfully!");
 
-        // Reset order after successful submission
-        cart = [];
-        document.getElementById("cartItems").innerHTML = "";
-        document.getElementById("cartTotal").innerText = "$0.00";
+        uploadedFiles = [];
+        document.getElementById("orderItems").innerHTML = "";
+        document.getElementById("orderTotal").innerText = "$0.00";
     })
     .catch(error => {
         console.error("Error:", error);
