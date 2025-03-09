@@ -187,23 +187,28 @@
             document.getElementById("orderTotal").innerText = `$${total.toFixed(2)}`;
         }
 
-      document.getElementById("submitOrderButton").addEventListener("click", function() {
+     document.getElementById("submitOrderButton").addEventListener("click", function() {
     let orderData = {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        email: document.getElementById("email").value,
-        phone: document.getElementById("phone").value,
-        total: document.getElementById("orderTotal").innerText
+        firstName: document.getElementById("firstName").value || "N/A",
+        lastName: document.getElementById("lastName").value || "N/A",
+        email: document.getElementById("email").value || "N/A",
+        phone: document.getElementById("phone").value || "N/A",
+        street: document.getElementById("street").value || "N/A",
+        city: document.getElementById("city").value || "N/A",
+        state: document.getElementById("state").value || "N/A",
+        zip: document.getElementById("zip").value || "N/A",
+        delivery: document.querySelector('input[name="delivery"]:checked') ? 
+                  document.querySelector('input[name="delivery"]:checked').value : "N/A",
+        cart: orderItems.map(item => `${item.file.name} (${item.width}" x ${item.height}") Qty: ${item.quantity}, Price: $${item.price.toFixed(2)}`),
+        estimatedTotal: document.getElementById("orderTotal").innerText.replace("$", "") || "0.00"
     };
 
     fetch("https://script.google.com/macros/s/AKfycbzQbvwuy-sSME9B819DtN4V7aJKISNlxl4-KVwSlfhbIpe5LufhCvszClZcn5EHP2ZI/exec", {
         method: "POST",
-        headers: { 
-            "Content-Type": "text/plain"  // 🔹 CORS workaround!
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData)
     })
-    .then(response => response.text())  // 🔹 Expecting plain text response
+    .then(response => response.text()) 
     .then(data => {
         console.log("Order submitted successfully:", data);
         alert("Order submitted successfully!");
@@ -212,7 +217,7 @@
         console.error("Error submitting order:", error);
         alert("Error submitting order. Check console for details.");
     });
-        });
+});
     </script>
 </body>
 </html>
